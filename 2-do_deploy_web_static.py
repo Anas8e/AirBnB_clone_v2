@@ -2,19 +2,24 @@
 """web server distribution"""
 from fabric.api import put, run, env, sudo
 import os.path
-import paramiko
 
 env.hosts = ['44.210.103.220', '35.168.59.18']
 
 
 def do_deploy(archive_path):
-    """distributes an archive to your web servers
+    """Distribute an archive to your web servers
+
+    Args:
+        archive_path (str): Path to the archive file to be deployed.
+
+    Returns:
+        bool: True if deployment is successful, False otherwise.
     """
-    if os.path.exists(archive_path) is False:
+    if not os.path.exists(archive_path):
         return False
     try:
         arc = archive_path.split("/")
-        base = arc[1].strip('.tgz')
+        base = os.path.basename(archive_path).replace('.tgz', '')
         put(archive_path, '/tmp/')
         sudo('mkdir -p /data/web_static/releases/{}'.format(base))
         main = "/data/web_static/releases/{}".format(base)
@@ -22,7 +27,8 @@ def do_deploy(archive_path):
         sudo('rm /tmp/{}'.format(arc[1]))
         sudo('mv {}/web_static/* {}/'.format(main, main))
         sudo('rm -rf /data/web_static/current')
-        sudo('ln -s {}/ "/data/web_static/current"'.format(main))
+        sudo('ln -s {}/ /data/web_static/current'.format(main))
         return True
-    except:
+    except Exception as e:
+        print(e)
         return False
